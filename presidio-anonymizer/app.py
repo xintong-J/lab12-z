@@ -10,6 +10,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request
 from presidio_anonymizer import AnonymizerEngine, DeanonymizeEngine
 from presidio_anonymizer.entities import InvalidParamError
+from presidio_anonymizer.operators.genz import GenZ
 from presidio_anonymizer.services.app_entities_convertor import AppEntitiesConvertor
 from werkzeug.exceptions import BadRequest, HTTPException
 
@@ -78,6 +79,41 @@ class Server:
             ])
             responseb = json.dumps(responsea)
             return Response(responseb, mimetype='application/json')
+        @self.app.route("/genz", methods=["GET"])
+        def genz():
+            """Return genz anonymization."""
+            gz = GenZ()
+            p_r = gz.operate(params={"entity_type": "PERSON"})
+            ph_r = gz.operate(params={"entity_type": "PHONE_NUMBER"})
+            text_e = f"Please contact {p_r} at {ph_r} if you have questions "\
+                "about the workshop registration."
+            p_s = 15
+            p_e = p_s + len(p_r)
+            ph_s = p_e + 4
+            ph_e = ph_s + len(ph_r)
+
+            responsec = {
+                "text": text_e,
+                "items": [
+                    {
+                        "start": ph_s,
+                        "end": ph_e,
+                        "entity_type": "PHONE NUMBER",
+                        "text": ph_r,
+                        "operator": "genz"
+                        },
+                    {
+                        "start": p_s,
+                        "end": p_e,
+                        "entity_type": "PERSON",
+                        "text": p_r,
+                        "operator": "genz"
+                    }
+                ]
+            }
+            responsec["items"].sort(key=lambda x: x["start"])
+            responsed = json.dumps(responsec)
+            return Response(responsed, mimetype='application/json')
         @self.app.route("/deanonymize", methods=["POST"])
         def deanonymize() -> Response:
             content = request.get_json()
