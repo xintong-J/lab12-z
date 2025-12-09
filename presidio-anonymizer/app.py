@@ -1,7 +1,9 @@
 """REST API server for anonymizer."""
 
+import json
 import logging
 import os
+from collections import OrderedDict
 from logging.config import fileConfig
 from pathlib import Path
 
@@ -66,7 +68,16 @@ class Server:
                 operators=anonymizers_config,
             )
             return Response(anoymizer_result.to_json(), mimetype="application/json")
-
+        @self.app.route("/genz-preview", methods=["GET"])
+        def genz_preview():
+            """Return genz preview anonymization."""
+            responsea = OrderedDict([
+                ("example","Call Emily at 577-988-1234"),
+                ("example output","Call GOAT at vibe check"),
+                ("description","Example output of genz anonymizer.")
+            ])
+            responseb = json.dumps(responsea)
+            return Response(responseb, mimetype='application/json')
         @self.app.route("/deanonymize", methods=["POST"])
         def deanonymize() -> Response:
             content = request.get_json()
